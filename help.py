@@ -5,7 +5,7 @@ class helpful(commands.HelpCommand):
         ctx = self.context
         skip = await self.filter_commands(mapping[None])
         # print(mapping)
-        helpful = discord.Embed(title = "Dylan's super cool help page")
+        helpful = discord.Embed(title = "Dylan's super cool help page v1.0")
         print(skip)
         luna = []
         for each in skip:
@@ -13,8 +13,9 @@ class helpful(commands.HelpCommand):
 
         helpful.add_field(name = 'Commands',value = '\n'.join(luna))
 
+        smip = skip[1:]
         lackey = ['Help page (duh)']
-        for beach in skip:
+        for beach in smip:
             lackey.append(beach.description)
 
         helpful.add_field(name = 'Description', value = '\n'.join(lackey))
