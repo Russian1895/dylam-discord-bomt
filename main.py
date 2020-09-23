@@ -1,22 +1,43 @@
 import discord
 from help import helpful
 from discord.ext import commands, tasks
+from discord.utils import get
 import openpyxl as xl
 from person import person
+from discord.ext.commands import Bot
 import datetime
 
-# VERSION 1.0
+# VERSION 1.02
 
 bday = commands.Bot(command_prefix = ['++'], case_insensitive = True, help_command = helpful())
+name1 = ''
+name2 = ''
+multiple = False
 
 @bday.event
 async def on_ready():
     print('LIBERTY PRIME ONLINE')
     await bday.change_presence(activity = discord.Game('(Prefix is ++)'))
 
+
 @bday.command(hidden = False, description = 'shut up')
 async def dylan(ctx,*args):
+    # print(ctx)
     await ctx.send('shut up')
+
+@tasks.loop(seconds = 5)
+async def pain(ctx, mult, name1, name2 = ''):
+    ctx = ctx.author
+    await bday.wait_until_ready()
+    if mult == False:
+        await ctx.guild.me.edit(nick=name1)
+    else:
+        if cycle == 0:
+            await ctx.guild.me.edit(nick=name1)
+            cycle = 1
+        if cycle == 1:
+            await ctx.guild.me.edit(nick=name2)
+            cycle = 0
 
 # @bday.command(hidden = False, description = 'Plays a random so')
 
@@ -53,6 +74,7 @@ async def next(ctx,*args):
 
     if len(parallel) == 0:
         await ctx.send('There are no birthdays this month...')
+        return
     else:
         closest = []
         othertemp = 0
@@ -61,6 +83,7 @@ async def next(ctx,*args):
                 othertemp = othertemp + 1
         if othertemp == 0:
             await ctx.send('There are no more birthdays this month!')
+            return
 
     chumpy = 0
     poopdex = 0
@@ -76,6 +99,9 @@ async def next(ctx,*args):
                 peedex = b
         if parallel[b].bdate.day > today.day:
             closest.append(parallel[b].bdate.day - today.day)
+        # else:
+        #     for x in range(100):
+        #         closest.append()
 
     bing = 'thing'
     ding = 'wing'
@@ -92,9 +118,18 @@ async def next(ctx,*args):
 
     if chumpy == 2:
         await ctx.send(f"My boy {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}'s birthday is today!")
+        multiple = False
+        name1 = (f"Bday: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
+        pain.start(ctx,False,name1)
+        return
 
     if chumpy > 1:
         await ctx.send(f"My boys {parallel[poopdex].fname}{bing}{parallel[poopdex].lname} and {parallel[peedex].fname}{ding}{parallel[peedex].lname}'s birthdays are today!")
+        name1 = (f"Bday: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
+        name2 = (f"Bday:{parallel[peedex].fname}{ding}{parallel[peedex].lname}")
+        multiple = True
+        pain.start(ctx,True,name1,name2)
+        return
 
     min = 34
     index = 0
@@ -120,9 +155,12 @@ async def next(ctx,*args):
 
     if (min == 1 and twins == False) or (min > 1 and twins == False):
         await ctx.send(f'My boy {parallel[index].fname}{bing}{parallel[index].lname} is turning {temp} in {min} day(s)!')
+        pain.start(ctx)
+        return
     if (min == 1 and twins == True) or (min > 1 and twins == True):
         await ctx.send(f"My boys {parallel[index].fname}{bing}{parallel[index].lname} and {parallel[twindex].fname}{ing}{parallel[twindex].lname} are turning {temp} and {hemp} in {min} day(s)!")
-    # await ctx.send(people)
+        pain.start(ctx)
+        return
 
 # @bday.event
 # async def on_command_error(ctx,error):
