@@ -5,11 +5,11 @@ class helpful(commands.HelpCommand):
         ctx = self.context
         skip = await self.filter_commands(mapping[None])
         # print(mapping)
-        helpful = discord.Embed(title = "Dylan's super cool help page v1.02")
+        helpful = discord.Embed(title = "Dylan's super cool help page v1.12")
         print(skip)
         luna = []
         for each in skip:
-            luna.append('++' + each.name)
+            luna.append('=' + each.name)
 
         helpful.add_field(name = 'Commands',value = '\n'.join(luna))
 
