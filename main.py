@@ -6,27 +6,61 @@ import openpyxl as xl
 from person import person
 from discord.ext.commands import Bot
 import datetime
+import random
 
-# VERSION 1.02
+import youtube_dl
 
-bday = commands.Bot(command_prefix = ['++'], case_insensitive = True, help_command = helpful())
+# VERSION 1.12
+
+bday = commands.Bot(command_prefix = ['='], case_insensitive = True, help_command = helpful())
+#I don't actually think these do anything
 name1 = ''
 name2 = ''
 multiple = False
 
+players = {}
+choices = ['Akina Nakamori - Anata no Portrait.flac',
+'Akina Nakamori - Fragile Afternoon.flac',
+'Akina Nakamori - Hot Springs.flac',
+'Akina Nakamori - Into the Azure Night.mp3',
+'Akina Nakamori - Legend of the Galaxy.flac',
+'Akina Nakamori - Mythology.mp3',
+'Akina Nakamori - Shojo A.mp3',
+'Akina Nakamori - Slow Motion.flac',
+'Aqua City - Misty night Cruising.mp3',
+'Aqua City - Reverside Hotel.mp3',
+'CINDY - Believing in Ourselves.flac',
+'i have no idea - Refrain.mp3',
+'Ito Chieri - Merry Christmas.flac',
+'Kingo Hamada - Dolphin in Town.mp3',
+'Kingo Hamada - Midnight Cruisin.mp3',
+# 'Mai Yamane - Tasogare.flac',
+'Mariya Takeuchi - Once Again.flac',
+'Mariya Takeuchi - Plastic Love.flac',
+'Mariya Takeuchi - September.flac',
+'Meiko Nakahara - Fantasy.flac',
+'Meiko Nakahara - Friday Magic.flac',
+'Meiko Nakahara - Gigolo.flac',
+"Tomoko Aran - I'm In Love.flac",
+'Yasuha - Flyby Chinatown.flac',
+'Yasuha - Paul Pauly Paul.mp3',
+'Yasuha - Short Story.flac',
+'Yuming Matsutoya - No Side.mp3',
+'Yuming Matsutoya - No-return.flac',
+'Yuming Matsutoya - Refrain Something.flac',
+'Yuming Matsutoya - Youthful Regret.mp3']
+
 @bday.event
 async def on_ready():
     print('LIBERTY PRIME ONLINE')
-    await bday.change_presence(activity = discord.Game('(Prefix is ++)'))
-
+    await bday.change_presence(activity = discord.Game('(Prefix is =)'))
 
 @bday.command(hidden = False, description = 'shut up')
 async def dylan(ctx,*args):
-    # print(ctx)
     await ctx.send('shut up')
 
-@tasks.loop(seconds = 5)
-async def pain(ctx, mult, name1, name2 = ''):
+@tasks.loop(seconds = 10)
+async def pain(ctx, mult, name1, name2 = '', cycle = 0):
     ctx = ctx.author
     await bday.wait_until_ready()
     if mult == False:
@@ -39,7 +73,43 @@ async def pain(ctx, mult, name1, name2 = ''):
             await ctx.guild.me.edit(nick=name2)
             cycle = 0
 
-# @bday.command(hidden = False, description = 'Plays a random so')
+@bday.command(hidden = False, pass_context = True,description = 'Plays a random song.')
+async def song(ctx):
+    if ctx.author.voice and ctx.author.voice.channel:
+        channel = ctx.author.voice.channel
+    else:
+        await ctx.send("you aren't connected to a voice channel silly")
+        return
+    global vc
+    try:
+        vc=await channel.connect()
+    except:
+        TimeoutError
+    if vc.is_playing():
+        vc.stop()
+
+    bum = random.randint(0,28)
+    last = choices[bum]
+    current = discord.Embed(title = "Now Playing:")
+    current.add_field(name = f'Song {bum}/{len(choices)}', value = last)
+    await ctx.send(embed = current)
+    guild = ctx.message.guild
+    voice_client = guild.voice_client
+    player = vc.play(discord.FFmpegPCMAudio(last), after=lambda e: print('done', e))
+
+@bday.command(hidden = False, pass_context = True,description = 'Silence da bot.')
+async def stop(ctx):
+    if ctx.author.voice and ctx.author.voice.channel:
+        channel = ctx.author.voice.channel
+    else:
+        await ctx.send("the bot isn't in a voice channel dummy")
+        return
+    global vc
+    try:
+        await ctx.send("*rude*")
+        vc.stop()
+    except:
+        TimeoutError
 
 @bday.command(hidden = True, description = 'secret')
 async def die(ctx,*args):
@@ -119,14 +189,14 @@ async def next(ctx,*args):
     if chumpy == 2:
         await ctx.send(f"My boy {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}'s birthday is today!")
         multiple = False
-        name1 = (f"Bday: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
+        name1 = (f"Birthday!: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
         pain.start(ctx,False,name1)
         return
 
     if chumpy > 1:
         await ctx.send(f"My boys {parallel[poopdex].fname}{bing}{parallel[poopdex].lname} and {parallel[peedex].fname}{ding}{parallel[peedex].lname}'s birthdays are today!")
-        name1 = (f"Bday: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
-        name2 = (f"Bday:{parallel[peedex].fname}{ding}{parallel[peedex].lname}")
+        name1 = (f"Birthday!: {parallel[poopdex].fname}{bing}{parallel[poopdex].lname}")
+        name2 = (f"Birthday!: {parallel[peedex].fname}{ding}{parallel[peedex].lname}")
         multiple = True
         pain.start(ctx,True,name1,name2)
         return
@@ -162,11 +232,11 @@ async def next(ctx,*args):
         pain.start(ctx)
         return
 
-# @bday.event
-# async def on_command_error(ctx,error):
-#     print('YO MR. WHITE THERE WAS AN ERROR')
-#     await ctx.send('Jesse what are you talking about')
-#     await ctx.send('https://i.insider.com/5dadec34045a313a5926f727?width=1200&format=jpeg')
+@bday.event
+async def on_command_error(ctx,error):
+    print('YO MR. WHITE THERE WAS AN ERROR')
+    await ctx.send('Jesse what are you talking about')
+    await ctx.send('https://i.insider.com/5dadec34045a313a5926f727?width=1200&format=jpeg')
 
 
 
