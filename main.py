@@ -9,11 +9,12 @@ import datetime
 import random
 import dotenv
 import os
+import asyncio
 env_file = dotenv.dotenv_values()
 # MOST OF WHAT I HAVE IMPORTED HERE IS ABSOLUTELY USELESS
 import youtube_dl
 
-# VERSION 1.16
+# VERSION 1.18
 # special thanks to Andres for teaching me about discord.py rewrite
 
 bday = commands.Bot(command_prefix = ['='], case_insensitive = True, help_command = helpful())
@@ -32,6 +33,23 @@ choices = ['Akina Nakamori - Anata no Portrait.flac',
 'Akina Nakamori - Mythology.mp3',
 'Akina Nakamori - Shojo A.mp3',
 'Akina Nakamori - Slow Motion.flac',
+'Akina Nakamori - Shipwreck.mp3',
+'Anri - SHYNESS BOY.flac',
+'Anri - WINDY SUMMER.flac',
+'Anri - YOU ARE NOT ALONE.flac',
+'Hitomi Ishikawa - Alone.mp3',
+'Hitomi Ishikawa - Heart Communication.mp3',
+'Hitomi Ishikawa - Machibuse.mp3',
+'Hitomi Ishikawa - Right to Right.mp3',
+'Naoko Kawai - Control.mp3',
+'Naughty Boys - Ongaku.mp3',
+'Taeko Onuki - Desolation.flac',
+'Taeko Onuki - Law of Nature.flac',
+'Taeko Onuki - Metropolis.flac',
+'Taeko Onuki - Summer Connection.flac',
+'Tatsu Yamashita - Saucy Dog.flac',
+'Tatsuro Yamashita - DAYDREAM.flac',
+'Tatsuro Yamashita - Ride on Time.flac',
 'Aqua City - Misty night Cruising.mp3',
 'Aqua City - Reverside Hotel.mp3',
 'CINDY - Believing in Ourselves.flac',
@@ -39,8 +57,8 @@ choices = ['Akina Nakamori - Anata no Portrait.flac',
 'Ito Chieri - Merry Christmas.flac',
 'Kingo Hamada - Dolphin in Town.mp3',
 'Kingo Hamada - Midnight Cruisin.mp3',
-# 'Mai Yamane - Tasogare.flac',
-# FOR SOME REASON TASOGARE DOESN'T WORK
+'Mai Yamane - Tasogare.mp3',
+# TASOGARE DOESNT WORK FOR SOME REASON PLS HELP
 'Mariya Takeuchi - Once Again.flac',
 'Mariya Takeuchi - Plastic Love.flac',
 'Mariya Takeuchi - September.flac',
@@ -54,7 +72,13 @@ choices = ['Akina Nakamori - Anata no Portrait.flac',
 'Yuming Matsutoya - No Side.mp3',
 'Yuming Matsutoya - No-return.flac',
 'Yuming Matsutoya - Refrain Something.flac',
-'Yuming Matsutoya - Youthful Regret.mp3']
+'Yuming Matsutoya - Youthful Regret.mp3',
+'Miki Matsubara - Stay with me.flac',
+'Momoko Kikuchi - Ivory Coast.mp3',
+"Momoko Kikuchi - Can't Meet You Anymore.mp3",
+'Momoko Kikuchi - Natsuiro Kataomoi.mp3',
+'Wink - Turn It Into Love.mp3'
+]
 
 # THIS BAD BOY HERE CHECKS TO SEE IF THE BOT ACTUALLY WORKS
 @bday.event
@@ -66,6 +90,11 @@ async def on_ready():
 @bday.command(hidden = False, description = 'shut up')
 async def dylan(ctx,*args):
     await ctx.send('shut up')
+
+# MY THANKS
+@bday.command(hidden = True, description = 'yes')
+async def thanks(ctx,*args):
+    await ctx.send('Yeah no problem buddy.')
 
 # CYCLES NAMES WHEN IT IS SOMEONE's BIRTHDAY TODAY
 @tasks.loop(seconds = 10)
@@ -98,10 +127,33 @@ async def song(ctx):
     if vc.is_playing():
         vc.stop()
 
-    bum = random.randint(0,28)
+    bum = random.randint(0,len(choices))
     last = choices[bum]
     current = discord.Embed(title = "Now Playing:")
-    current.add_field(name = f'Song {bum}/{len(choices)}', value = last)
+    current.add_field(name = f'Song {bum + 1}/{len(choices)}', value = last)
+    await ctx.send(embed = current)
+    guild = ctx.message.guild
+    voice_client = guild.voice_client
+    player = vc.play(discord.FFmpegPCMAudio(f'songs\{last}'), after=lambda e: print('done', e))
+
+@bday.command(hidden = False, pass_context = True,description = 'Pick a list song by #')
+async def pick(ctx, num = 1):
+    num = num - 1
+    if ctx.author.voice and ctx.author.voice.channel:
+        channel = ctx.author.voice.channel
+    else:
+        await ctx.send("you aren't connected to a voice channel dum dum")
+        return
+    global vc
+    try:
+        vc=await channel.connect()
+    except:
+        TimeoutError
+    if vc.is_playing():
+        vc.stop()
+    last = choices[num]
+    current = discord.Embed(title = "Now Playing:")
+    current.add_field(name = f'Song {num + 1}/{len(choices)}', value = last)
     await ctx.send(embed = current)
     guild = ctx.message.guild
     voice_client = guild.voice_client
@@ -109,10 +161,47 @@ async def song(ctx):
 
 # GIVES A SHITTY LIST OF ALL THE SONGS IN THE SONG FOLDER
 @bday.command(hidden = False, pass_context = True,description = 'List for =song.')
-async def list(ctx):
+async def slist(ctx):
+    sorry = choices.copy()
+    for each in sorry:
+        sorry[sorry.index(each)] = f'{sorry.index(each) + 1}: {each}'
+    # print(sorry)
     dog = discord.Embed(title = "List o' songs")
-    dog.add_field(name = f'There are currently {len(choices)} in the =song list.', value = '\n'.join(choices))
+    dog.add_field(name = f'There are currently {len(sorry)} songs in the =song list.',value="Please tell me if any of this doesn't play properly")
+    dog.set_footer(text='\n'.join(sorry))
     await ctx.send(embed = dog)
+
+@bday.command(hidden = False, description = "List for =next")
+async def blist(ctx,*args):
+    guys = xl.load_workbook('homies.xlsx')
+    yeet = guys['Sheet1']
+    thing = yeet.cell(1, 1)
+    people = []
+    f = []
+    l = []
+    date = []
+
+    for row in range(yeet.max_row):
+        first = yeet.cell(row+1, 1)
+        last = yeet.cell(row+1, 2)
+        mon = yeet.cell(row+1, 3)
+        day = yeet.cell(row+1, 4)
+        yea = yeet.cell(row+1, 5)
+        lamer = person(first.value,mon.value,day.value,yea.value,last.value)
+        f.append(first.value)
+        if last.value == None:
+            l.append(' ')
+        else:
+            l.append(last.value)
+        date.append(f'{str(mon.value)}/{str(day.value)}/{str(yea.value)}')
+        people.append(lamer)
+
+    pog = discord.Embed(title = "List o' Birthdays")
+    pog.add_field(name = 'First Name',value = '\n'.join(f))
+    pog.add_field(name = 'Last Name', value = '\n'.join(l))
+    pog.add_field(name = 'M/D/Y', value = '\n'.join(date))
+    pog.set_footer(text = f'There are currently {len(people)} people in the =next list.')
+    await ctx.send(embed = pog)
 
 # SECRET COMMAND FOR SECRET PEOPLE
 @bday.command(hidden = True, pass_context = True,description = 'metal gear')
@@ -139,6 +228,7 @@ async def snake(ctx):
     voice_client = guild.voice_client
     player = vc.play(discord.FFmpegPCMAudio('songs\Snake Eater.mp3'), after=lambda e: print('done', e))
 
+
 # STOPS WHATEVER THE BOT WAS PLAYING AND DISCONNECTS IT FROM THE VC
 @bday.command(hidden = False, pass_context = True,description = 'Silence da bot.')
 async def stop(ctx):
@@ -161,10 +251,50 @@ async def die(ctx,*args):
     await ctx.send("I don't think so.")
     await ctx.send("https://youtu.be/MvsyxAHcGmo?t=38")
 
+@bday.command(hidden = True, description = 'secret death')
+async def kill(ctx,name):
+    if name == 'dylan' or name == 'Dylan':
+        await ctx.send(f'ah')
+        await asyncio.sleep(0.5)
+        await ctx.send(f'ah')
+        await asyncio.sleep(0.5)
+        await ctx.send(f'ah')
+        await asyncio.sleep(0.5)
+        await ctx.send(f'*not so fast*')
+    else:
+        chance = random.randint(0,1)
+        if chance == 0:
+            await ctx.send(f'{name} dies')
+        else:
+            await ctx.send(f'{name} had divine shield and lived!')
+
 # SECRET COMMAND THAT MAY OR MAY NOT ACTUALLY WORK
 @bday.command(hidden = True, description = 'yes')
 async def funny(ctx,*args):
     await ctx.send("https://cdn.discordapp.com/attachments/729916916793081956/752758446767472640/video0-1.mp4")
+
+# TELLS A RANDOM JOKE (sort of)
+@bday.command(hidden = False, description = "Tells a joke.")
+async def joke(ctx,*args):
+    await ctx.send('*you*')
+
+@bday.command(hidden = True, description = "Tells a joke.")
+async def talk(ctx,*args):
+    if ctx.author.voice and ctx.author.voice.channel:
+        channel = ctx.author.voice.channel
+    else:
+        await ctx.send("Sorry, I can't seem to connect to your channel ):")
+        return
+    global vc
+    try:
+        vc=await channel.connect()
+    except:
+        TimeoutError
+    if vc.is_playing():
+        vc.stop()
+    guild = ctx.message.guild
+    voice_client = guild.voice_client
+    player = vc.play(discord.FFmpegPCMAudio('songs\me.m4a'), after=lambda e: print('done', e))
 
 # LITERALLY JUST BDAY FROM AP COMPUTER SCIENCE
 @bday.command(hidden = False, description = "Who's birthday is next?")
@@ -278,6 +408,7 @@ async def next(ctx,*args):
         return
 
 # GENERAL ERROR OUTPUT IN CASE YOU SUCK
+
 @bday.event
 async def on_command_error(ctx,error):
     print('YO MR. WHITE THERE WAS AN ERROR')
